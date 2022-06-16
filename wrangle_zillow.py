@@ -235,3 +235,12 @@ def zillow_scale(df,
         return df.drop(columns = column_names), scalers
     else:
         return df.drop(columns = column_names)
+
+def make_X_and_y(df,
+                target_column = 'logerror'):
+    '''Makes a X and y sets based on the target column passed as a list'''
+    #drop relevant columns
+    X_train = df.drop(columns = [target_column, 'parcelid', 'id'])
+    #make y_Train
+    y_train = df[target_column]
+    return X_train, y_train
