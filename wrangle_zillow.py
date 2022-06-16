@@ -19,6 +19,7 @@ def wrangle_data(df):
     df = clearing_fips(df)
     df['latitude'] = df['latitude']*10**-6
     df['longitude'] = df['longitude']*10**-6
+    df.drop(columns=['calculatedbathnbr', 'fullbathcnt', 'finishedsquarefeet12', 'assessmentyear', 'roomcnt'], inplace=True)
     return df
 
 def get_zillow_data(query_db=False):
@@ -113,7 +114,6 @@ def handle_missing_values(df, prop_required_column, prop_required_row):
     return df
 
 def filter_properties(df):
-    #df = df[df['unitcnt'] == 1] # <- the problem is here
     filter_cols = ['Single Family Residential', 'Mobile Home', 'Manufactured, Modular, Prefabricated Homes', 'Residential General', 'Townhouse']
     df = df[df['propertylandusedesc'].isin(filter_cols)]
     return df
@@ -177,3 +177,61 @@ def split_data(df, return_info=False):
         return train, validate, test, df_info
     else:
         return train, validate, test
+
+def scale_and_encode(df, columns_to_encode = None, columns_to_scale=None):
+    if columns_to_encode is not None:
+        df = encode_columns(df, columns_to_encode)
+    if columns_to_scale is not None:
+        df = zillow_scale(df, columns_to_scale)
+    return df
+
+def encode_columns(df,
+                    column_names):
+    '''encodes columns as passed in column_names'''
+    #make dummies
+    dummy_df = pd.get_dummies(df[column_names], drop_first=True)
+    #add to the existing dataframe
+    df = pd.concat([df, dummy_df], axis=1).drop(columns = column_names)
+    return df
+
+def zillow_scale(df,
+                column_names,
+                scaler_in=MinMaxScaler(),
+                return_scalers=False):
+    '''
+    Returns a dataframe of the scaled columns
+    
+    Args:
+        df (DataFrame) : The dataframe with the columns to scale
+        column_names (list) : The columns to scale
+        scaler_in (sklearn.preprocessing) : scaler to use, default = MinMaxScaler()
+        return_scalers (bool) : boolean to return a dictionary of the scalers used for 
+            the columns, default = False
+    Returns:
+        df_scaled (DataFrame) : A dataframe containing the scaled columns
+        scalers (dictionary) : a dictionary containing 'column' for the column name, 
+            and 'scaler' for the scaler object used on that column
+    '''
+    #variables to hold the returns
+    scalers = []
+    df_scaled = df[column_names]
+    for column_name in column_names:
+        #determine the scaler
+        scaler = scaler_in
+        #fit the scaler
+        scaler.fit(df[[column_name]])
+        #transform the data
+        scaled_col = scaler.transform(df[[column_name]])
+        #store the column name and scaler
+        scaler = {
+            'column':column_name,
+            'scaler':scaler
+        }
+        scalers.append(scaler)
+        #store the transformed data
+        df[f"{column_name}_scaled"] = scaled_col
+    #determine the correct varibales to return
+    if return_scalers:
+        return df.drop(columns = column_names), scalers
+    else:
+        return df.drop(columns = column_names)

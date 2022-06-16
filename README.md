@@ -3,13 +3,18 @@
 ## Key Takeaways
 
 
-
 ## Contents
-
-*Hyperlinks will only work on locally stored copies of this Jupyter Notebook*
 
 1. <a href='#intro'>Introduction</a>
 2. <a href='#wrangle'>Wrangle</a>
+    1. <a href='#acquire'>Acquire the Data</a>
+    2. <a href='#prepare'>Prepare the Data</a>
+3. <a href='#explore'>Explore</a>
+    1. <a href='#target'>Looking at the Target Variable</a>
+    2. <a href='#geography'>Is `logerror` correlated with geography?</a>
+    3. <a href='#clustering'>Using Clustering Algorithms to Explore the Data </a>
+    4. <a href='#nongeo_clusters'>Exploring Non-Geographic Clusters </a>
+    5. <a href='#geo_clusters'>Exploring Geographic clusters </a>
 
 ## Introduction <a name='intro'></a>
 
@@ -62,3 +67,79 @@ This is all done in the `wrangle_zillow.wrangle_data`, which takes a dataframe p
 - `latitude` and `longitude` are corrected by multiplying by $10^{-6}$ directly, not through a function
 
 <a href='#contents'>Back to contents</a>
+
+## Exploration <a name='explore'></a>
+
+### Key Explore Takeaways
+- Outliers for `logerror` are flagged with a boolean
+- Outliers for `logerror` are more likely in Los Angeles, but Orange county has a higher mean `logerror`
+- The KMeans clustering algorithm is run twice; once using geographic data, and once without it.
+    - Both times there was a definite geographic split: East/West and Downtown/Suburbs
+    - Both times there was a stratification based on the `yearbuilt` column
+
+### Exploration Introduction
+
+In the exploration stage of the analysis, data is split into subsets to prevent data leakage, the target variable is understood, and then multivariate analysis is also performed on a series of question.  For each question, there is a series of key takeaways, followed by a discussion with visualizations, and concluded by a series of hypothesis tests.  All hypothesis testing is done with a $0.95$ confidence interval ($α=0.05$).
+
+The following `explore_zillow` custom module functions are used:
+- `t_test_by_cat()` : performs a two-tailed, one sample t-test for a categorical variable over a continuous variables.  It splits the dataframe into the subcategories of the categorical variable and tests every combination with the continuous variables. It has the following parameters
+    - `df` (DataFrame) : A dataframe containing the columns to be tested
+    - `columns_cat` (list) : A list of categorical columns to be tested
+    - `columns_cont` (list) : A list of continuous variables to be tested
+- `t_test_by_cat_greater()` : same as `t_test_by_cat()` but performs a single tailed t-test where the alternative hypothesis is that the continous variable's mean is greater.  It uses the same parameters.
+- `t_test_greater()` : performs a single tailed t-test on the hypothesis that the continous variable has a greater mean.  It has the following inputs:
+    - `df` (Dataframe) : a dataframe containing the relevant information
+    - `column_cat` (string) : name of the categorical variable
+    - `subcat_val` (string) : name of the category within `column_cat`
+    - `column_cont` (string) : name of the continuous variable to test
+
+### Looking at the Target Variable: `logerror` <a name='target'></a>
+
+#### Key Target Variable Takeaways
+- `logerror` is normally distributed
+- Outliers are not dropped, but they are flagged by the `is_outlier` column
+
+### Is `logerror` correlated with geography? <a name='geography'></a>
+
+#### Key Takeaways
+- `logerror` outliers are more common in Los Angeles county
+- Orange county has a higher mean `logerror` than the other two counties
+
+<a href='#contents'>Back to content</a>
+
+### Using Clustering Algorithms to Explore the Data <a name='clustering'></a>
+
+#### Key Clustering Take Aways
+- 6 clusters is optimal
+- Clustering looks geographic, even if none of the parameters are geographic
+- 2 cluster columns are made `clusters_geo` based on geographic data and `clusters` not based on geographic data
+
+#### Discussion
+
+Besides geography, there may be other groupings of data.  In order to expedite the process of finding useful groups, a clustering algorithm can be used to explore the data.  In order to increase a likelihood of success, the following columns are used for clustering:
+- `county` : See discussion <a href='#geography'>above</a> for importance of geography to `logerror`
+- `latitude` and `longitude` : Related to the question of geography, but allows for more spatial clustering
+- `taxvaluedollarcnt` : Because this is the target variable of the model producing `logerror` it might be useful
+- `bathroomcnt` : This was correlated with `taxvaluedollarcnt`
+- `calculatedfinishedsquarefeet` : This was also correlated with `taxvaluedollarcnt`
+- `yearbuilt` : It might be harder to predict whether or not an older house is valuable or not.  It could be valuable because it is historic and/or renovated (or have potential as a "fixer-upper")
+
+<a href='#contents'>Back to contents</a>
+
+### Exploring Non-Geographic Clusters <a name='nongeo_clusters'></a>
+
+#### Key Takeaways
+- Clusters 0 and 5 have a higher logerror
+- Clusters 0 and 5 have a higher taxvaluedollarcnt
+- `yearbuilt` was a good predictor of cluster, with clusters 0 and 5 being older and newer expensive houses, and the rest of the clusters representing some number of years
+- It might be beneficial to use a piecewise model for clusters 0 and 5, then a model for the other clusters
+
+<a href='#contents'>Back to contents</a>
+
+### Exploring Geographic clusters <a name='geo_clusters'></a>
+
+#### Key Takeaways
+- Clusters 1 and 4 have a higher logerror.
+- Clusters are still along `yearbuilt`, but less strongly, as geographic data might be more of a pull also
+- Clusters 1 and 2 have a higher `taxvaluedollarcnt`, and this looks mainly due to significant outliers within these clusters
+- The geographic clusters tend to split along an East/West divide
