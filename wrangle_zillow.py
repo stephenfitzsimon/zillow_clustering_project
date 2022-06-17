@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.cluster import KMeans
 
 from env import get_db_url
 
@@ -179,10 +180,28 @@ def split_data(df, return_info=False):
         return train, validate, test
 
 def scale_and_encode(df, columns_to_encode = None, columns_to_scale=None):
+    '''Scales and encodes the column lists passed to the function'''
+    # if nothing is passed, then do not call the function
     if columns_to_encode is not None:
         df = encode_columns(df, columns_to_encode)
     if columns_to_scale is not None:
         df = zillow_scale(df, columns_to_scale)
+    return df
+
+def year_cats_non_geo(df):
+    '''Bins the year column into categories'''
+    #make bins
+    year_bins = [1870, 1940, 1975, 1980, 2020]
+    #make column with categorical variable
+    df['year_bin'] = pd.cut(df['yearbuilt'], year_bins, labels=['old_homes', 'war_post_war_homes', 'eighties_homes', 'new_homes'])
+    return df
+
+def year_cats_geo(df):
+    '''Bins the year column into categories'''
+    #make bins
+    year_bins = [1870, 1945, 1970, 1985, 2020]
+    #make column with categorical variable
+    df['year_bin'] = pd.cut(df['yearbuilt'], year_bins, labels=['war_pre_war_homes', 'post_war_homes', 'eight_to_sixties_homes', 'new_homes'])
     return df
 
 def encode_columns(df,
@@ -192,6 +211,30 @@ def encode_columns(df,
     dummy_df = pd.get_dummies(df[column_names], drop_first=True)
     #add to the existing dataframe
     df = pd.concat([df, dummy_df], axis=1).drop(columns = column_names)
+    return df
+
+def make_geo_cluster(df):
+    '''adds column for the non-geo clusters'''#subset to the columns to cluster
+    df_sub = df[['parcelid','logerror','county', 'latitude', 'longitude', 'yearbuilt', 'taxvaluedollarcnt', 'bathroomcnt', 'calculatedfinishedsquarefeet']]
+    #scale and encode the data
+    df_sub_scaled = scale_and_encode(df_sub, columns_to_encode=['county'], columns_to_scale=['latitude', 'longitude', 'yearbuilt', 'taxvaluedollarcnt', 'bathroomcnt', 'calculatedfinishedsquarefeet'])
+    X = df_sub_scaled #['yearbuilt_scaled', 'taxvaluedollarcnt_scaled', 'bathroomcnt_scaled', 'calculatedfinishedsquarefeet_scaled']
+    kmeans = KMeans(n_clusters=6, random_state=RAND_SEED)
+    kmeans.fit(X)
+    #add to the dataframe
+    df['cluster_geo'] = kmeans.predict(X)
+    return df
+
+def make_non_geo_cluster(df):
+    '''adds column for the non-geo clusters'''#subset to the columns to cluster
+    df_sub = df[['parcelid','logerror', 'yearbuilt', 'taxvaluedollarcnt', 'bathroomcnt', 'calculatedfinishedsquarefeet']]
+    #scale and encode the data
+    df_sub_scaled = scale_and_encode(df_sub, columns_to_encode=None, columns_to_scale=['yearbuilt', 'taxvaluedollarcnt', 'bathroomcnt', 'calculatedfinishedsquarefeet'])
+    X = df_sub_scaled #['yearbuilt_scaled', 'taxvaluedollarcnt_scaled', 'bathroomcnt_scaled', 'calculatedfinishedsquarefeet_scaled']
+    kmeans = KMeans(n_clusters=6, random_state=RAND_SEED)
+    kmeans.fit(X)
+    #add to the dataframe
+    df['cluster'] = kmeans.predict(X)
     return df
 
 def zillow_scale(df,
@@ -240,7 +283,7 @@ def make_X_and_y(df,
                 target_column = 'logerror'):
     '''Makes a X and y sets based on the target column passed as a list'''
     #drop relevant columns
-    X_train = df.drop(columns = [target_column, 'parcelid', 'id'])
+    X_train = df.drop(columns = [target_column])
     #make y_Train
-    y_train = df[target_column]
+    y_train = df[['parcelid', target_column]]
     return X_train, y_train
