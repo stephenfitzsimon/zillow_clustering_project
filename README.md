@@ -10,11 +10,22 @@
     1. <a href='#acquire'>Acquire the Data</a>
     2. <a href='#prepare'>Prepare the Data</a>
 3. <a href='#explore'>Explore</a>
+    1. <a href='#split'>Splitting Data Into Subsets</a>
     1. <a href='#target'>Looking at the Target Variable</a>
     2. <a href='#geography'>Is `logerror` correlated with geography?</a>
     3. <a href='#clustering'>Using Clustering Algorithms to Explore the Data </a>
     4. <a href='#nongeo_clusters'>Exploring Non-Geographic Clusters </a>
     5. <a href='#geo_clusters'>Exploring Geographic clusters </a>
+4. <a href='#model'>Modeling</a>
+    1. <a href='#baseline_model'>Baseline Model </a>
+    2. <a href='#model1'>Model I: Non-geo clustering `yearbuilt` stratification</a>
+    3. <a href='#model2'>Model II: Geo clustering `yearbuilt` stratification</a>
+    4. <a href='#model3'>Model III: Non-Geo clustering feature</a>
+    5. <a href='#model4'>Model IV: Geo clustering feature</a>
+    6. <a href='#model_eval'>Evaluating Models </a>
+    7. <a href='#test'>Running the model on test data </a>
+5. <a href='#conclusion'>Conclusions </a>
+6. <a href='#appendix'>Appendix</a>
 
 ## Introduction <a name='intro'></a>
 
@@ -143,3 +154,140 @@ Besides geography, there may be other groupings of data.  In order to expedite t
 - Clusters are still along `yearbuilt`, but less strongly, as geographic data might be more of a pull also
 - Clusters 1 and 2 have a higher `taxvaluedollarcnt`, and this looks mainly due to significant outliers within these clusters
 - The geographic clusters tend to split along an East/West divide
+
+
+## Modeling <a name='model'></a>
+
+### Key Takeaways
+- Only some of the models beat the baseline prediction, and not by much
+
+### Discussion
+
+Four linear regression models are developed, validates, and the best model of the four is tested on unseen data.  The following metrics are used to evaluate the model:
+- The Explained Variance Score : This helps determine the amount of variance the model is explaining
+- RMSE : This represents the mean error, in the units of the target variable.  Although the `logerror` is unitless, this will still help evaluate the models
+- Plotting residuals : Although this is largely subjective, it is still helpful in interpreting the RMSE
+
+In considering how to model this data, two broad types of models are developed: 
+- Models based on new features : These models use the data exploration stage to develop new features to pass to the linear regression model
+    - Two models of this type are developed.  Each has a new feature based on the `yearbuilt` stratification found through clustering.
+- Models based on clusters : Models that use the cluster number/name as a feature.
+    - Two models are developed based on clusters found.  These are named.
+    
+All four models developed use a simple linear regression algorithm.
+    
+Non-engineered features to be used are the following:
+- `county`
+- `yearbuilt`
+- `latitud`
+- `longitude`
+- `taxvaluedollarcnt`
+- `bathroomcnt`
+- `calculatedfinishedsquarefeet`
+
+`parcelid` is also kept because it is a unique identifier for the row.
+
+The following functions from the `wrangle_zillow` module are used:
+- `make_X_and_y()` : Splits the dataframe into X and y sets where y contains only the target variable.  It also drops the `id` column.  Note that the `parcelid` will not be passed to the model.
+
+### Evaluating Models <a name='model_eval'></a>
+
+Models are evaluated on three criteria:
+- Better RMSE than baseline model
+- RMSE change between train and validate
+- Explained variance score
+
+<a href='#contents'>Back to content</a>
+
+## Conclusions <a name='conclusion'></a>
+
+### Key takeaways
+- The model does not do better than the baseline
+- `yearbuilt` or geographic data may be an indicator of logerror; however, this requires more investigation
+- More information on the properties could be included from the data set, especially if some of the column values could be inferred
+- Most important takeaway is that more time is needed to explore the data.
+- `logerror` outliers would be beneficial to focus on; maybe develop a classification model for them
+
+### For the future
+There is a lot of data in the set that could still be explored given more time.  Some suggestions for future investigation could be the following:
+- logerror might not be predicted by something intrinsic to the property; aggregating the data with wider economic trends could be beneficial
+- Investigate the trends for house prices in the region.  Try modeling these to determine what factors might be unpredictable
+- Research the economics of land to help determine how its value is evaluated
+- Focus on logerror outlier might be a next step, as it might improve the model's RMSE more than focusing on only on lower logerror.
+
+## Appendix <a name='appendix'></a>
+
+### Reproducing this Project <a name = 'reproduce_project'></a>
+
+1. Download `final_report.ipynb`, `explore_zillow.py` and `wrangle_zillow.py`
+2. Make a `env.py` file based on `env_example.py`
+3. Run `final_report.ipnyb`
+
+### Data Dictionary <a name = 'data_dictionary'></a>
+
+The following columns are retained:
+- parcelid : row identifier
+- bathroomcnt : number of bathrooms
+- bedroomcnt : number of bedrooms
+- calculatedfinishedsquarefeet : square feet in the house
+- latitude
+- longitude
+- lotsizesquarefeet : lot size in square feet
+- yearbuilt : year of construction
+- taxvaluedollarcnt : target variable. Value of the house
+- fips : relevant fips code mapped to county
+- county : county name
+- propertycountylandusecode : county law lands use code
+- propertylandusetypeid : foreign key from SQL database
+- rawcensustractandblock : census tract id
+- regionidcounty : id for county
+- regionidzip : zip code data
+- landtaxvaluedollarcnt : tax value of the land plot
+- censustractandblock : census track id number
+- propertylandusedesc : description of the lot
+
+The following are dropped columns:
+- airconditioningtypeid
+- architecturalstyletypeid
+- basementsqft
+- buildingclasstypeid
+- buildingqualitytypeid
+- decktypeid
+- finishedfloor1squarefeet
+- finishedsquarefeet13
+- finishedsquarefeet15
+- finishedsquarefeet50
+- finishedsquarefeet6
+- fireplacecnt
+- garagecarcnt
+- garagetotalsqft
+- hashottuborspa
+- heatingorsystemtypeid
+- poolcnt
+- poolsizesum
+- pooltypeid10
+- pooltypeid2
+- pooltypeid7
+- propertyzoningdesc
+- regionidcity
+- regionidneighborhood
+- storytypeid
+- threequarterbathnbr
+- typeconstructiontypeid
+- unitcnt
+- yardbuildingsqft17
+- yardbuildingsqft26
+- numberofstories
+- fireplaceflag
+- taxdelinquencyflag
+- taxdelinquencyyear
+- taxamount
+- structuretaxvaluedollarcnt
+- calculatedbathnbr
+- fullbathcnt
+- finishedsquarefeet12
+- propertylandusetypeid
+- regionidcounty
+- assessmentyear
+- roomcnt
+- id
