@@ -15,11 +15,17 @@ RAND_SEED = 739
 FILENAME = 'zillow_clustering_data.csv'
 
 def wrangle_data(df):
+    '''control flow function to clean up data'''
+    #get single unit properties
     df = filter_properties(df)
+    # only rows and columns with 0.99 of the data
     df = handle_missing_values(df, 0.01, 0.01)
+    #map county names
     df = clearing_fips(df)
+    #fix lat and long
     df['latitude'] = df['latitude']*10**-6
     df['longitude'] = df['longitude']*10**-6
+    #drop unnescarry columns
     df.drop(columns=['calculatedbathnbr', 'fullbathcnt', 'finishedsquarefeet12', 'assessmentyear', 'roomcnt'], inplace=True)
     return df
 
@@ -115,6 +121,7 @@ def handle_missing_values(df, prop_required_column, prop_required_row):
     return df
 
 def filter_properties(df):
+    '''filter the properties to ones likely to be single unit properties'''
     filter_cols = ['Single Family Residential', 'Mobile Home', 'Manufactured, Modular, Prefabricated Homes', 'Residential General', 'Townhouse']
     df = df[df['propertylandusedesc'].isin(filter_cols)]
     return df

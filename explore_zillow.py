@@ -166,9 +166,13 @@ def t_test_by_cat_greater(df,
     return pd.DataFrame(outputs)
 
 def t_test_greater(df, column_cat, subcat_val, column_cont):
+    '''Perform a t-test that mean is greater than pop'''
+    #get subsets
     category_x = df[df[column_cat] == subcat_val][column_cont]
     not_category_x = df[~(df[column_cat] == subcat_val)][column_cont].mean()
+    #perform test
     t, p = stats.ttest_1samp(category_x, not_category_x)
+    #organize results
     output = {
         'category_name':column_cat,
         'category_value':subcat_val,
@@ -176,4 +180,5 @@ def t_test_greater(df, column_cat, subcat_val, column_cont):
         'p-value':p,
         'reject_null': p/2 < ALPHA and t > 0
     }
+    #return results
     return pd.DataFrame([output])
