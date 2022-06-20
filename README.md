@@ -215,6 +215,8 @@ There is a lot of data in the set that could still be explored given more time. 
 - Research the economics of land to help determine how its value is evaluated
 - Focus on logerror outlier might be a next step, as it might improve the model's RMSE more than focusing on only on lower logerror.
 
+<a href='#contents'>Back to contents</a>
+
 ## Appendix <a name='appendix'></a>
 
 ### Reproducing this Project <a name = 'reproduce_project'></a>
@@ -222,6 +224,8 @@ There is a lot of data in the set that could still be explored given more time. 
 1. Download `final_report.ipynb`, `explore_zillow.py` and `wrangle_zillow.py`
 2. Make a `env.py` file based on `env_example.py`
 3. Run `final_report.ipnyb`
+
+<a href='#contents'>Back to contents</a>
 
 ### Data Dictionary <a name = 'data_dictionary'></a>
 
@@ -291,3 +295,5 @@ The following are dropped columns:
 - assessmentyear
 - roomcnt
 - id
+
+<a href='#contents'>Back to contents</a>
